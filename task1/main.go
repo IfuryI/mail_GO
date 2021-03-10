@@ -37,7 +37,11 @@ func main() {
 		return
 	}
 
-	strArr = uniq(strArr, opt)
+	strArr, err = uniq(strArr, opt)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	err = outputStrings(fout, strArr)
 	if err != nil {
@@ -47,7 +51,12 @@ func main() {
 }
 
 
-func uniq(strArr []string, opt options) []string {
+func uniq(strArr []string, opt options) ([]string, error) {
+	err := checkFlags(opt)
+	if err != nil {
+		return []string{}, err
+	}
+
 	var result []string
 	var repeatsCount int
 
@@ -55,15 +64,12 @@ func uniq(strArr []string, opt options) []string {
 	var prevLine string = FSFlagsProccesing(strArr[0], opt)
 	var prevLineSource string = strArr[0]
 
-	for i := 1; i < len(strArr); i++ {
-		currLine = strArr[i]
+	for ignoreCase := 1; ignoreCase < len(strArr); ignoreCase++ {
+		currLine = strArr[ignoreCase]
 		currLine = FSFlagsProccesing(currLine, opt)
 
-		if opt.i && strings.ToLower(prevLine) == strings.ToLower(currLine) {
-			repeatsCount++
-			continue
-		}
-		if prevLine == currLine {
+		if opt.ignoreCase && (strings.ToLower(prevLine) == strings.ToLower(currLine)) ||
+		   (prevLine == currLine) {
 			repeatsCount++
 			continue
 		}
@@ -72,81 +78,92 @@ func uniq(strArr []string, opt options) []string {
 
 		repeatsCount = 0
 		prevLine = currLine
-		prevLineSource = strArr[i]
+		prevLineSource = strArr[ignoreCase]
 	}
 
 	currLine = FSFlagsProccesing(strArr[len(strArr) - 1], opt)
 	appendStrToResult(prevLineSource, opt, repeatsCount, &result)
 
-	return result
+	return result, nil
 }
 
 
 func FSFlagsProccesing(str string, opt options) string {
 	tokens := strings.Split(str, " ")
-	if len(tokens) < opt.f {
+	if len(tokens) < opt.fields {
 		return "\n"
 	}
 
-	str = strings.Join(tokens[opt.f:], " ")
-	
-	if len(str) < opt.s {
+	str = strings.Join(tokens[opt.fields:], " ")
+
+	if len(str) < opt.chars {
 		return "\n"
 	}
 
-	return str[opt.s:]
+	return str[opt.chars:]
 }
 
 
 func appendStrToResult(str string, opt options, repeatsCount int, result *[]string) {
-	if !opt.c && !opt.d && !opt.u {
+	if (!opt.count && !opt.duplicate && !opt.uniq) ||
+	   (opt.duplicate && repeatsCount != 0) || (opt.uniq && repeatsCount == 0) {
 		*result = append(*result, str)
 		return
 	}
 
-	if opt.c {
+	if opt.count {
 		*result = append(*result, strconv.Itoa(repeatsCount + 1) + " " + str)
-		return
-	}
-
-	if (opt.d && repeatsCount != 0) || (opt.u && repeatsCount == 0) {
-		*result = append(*result, str)
 		return
 	}
 }
 
 
 type options struct {
-	c bool
-	d bool
-	u bool
-	f int
-	s int
-	i bool
+	count bool
+	duplicate bool
+	uniq bool
+	fields int
+	chars int
+	ignoreCase bool
 }
 
+func checkFlags(opt options) error {
+	if (opt.fields < 0 || opt.chars < 0) {
+		return errors.New("Аргумент флагов fields и chars не может быть меньше 0!")
+	}
+
+	if (opt.count && opt.duplicate && !opt.uniq ||
+		opt.count && !opt.duplicate && opt.uniq ||
+		!opt.count && opt.duplicate && opt.uniq ||
+		opt.count && opt.duplicate && opt.uniq) {
+		return errors.New("Не правильно переданные аргументы командной строки")
+	}
+
+	return nil
+}
 
 func readFlags() (options, error) {
-	CFlag := flag.Bool("c", false, "")
-	DFlag := flag.Bool("d", false, "")
-	UFlag := flag.Bool("u", false, "")
-	FFlag := flag.Int("f",  0, "")
-	SFlag := flag.Int("s", 0, "")
-	IFlag := flag.Bool("i", false, "")
+	CFlag := flag.Bool("c", false, "Подсчитать количество встречаний строки во входных данных")
+	DFlag := flag.Bool("d", false, "Вывести только те строки, которые повторились во входных данных")
+	UFlag := flag.Bool("u", false, "Вывести только те строки, которые не повторились во входных данных")
+	FFlag := flag.Int("f",  0, "Не учитывать первые N полей в строке")
+	SFlag := flag.Int("s", 0, "Не учитывать первые N символов в строке")
+	IFlag := flag.Bool("i", false, "Не учитывать регистр букв")
 
 	flag.Parse()
 
 	opt := options {
-		c: *CFlag,
-		d: *DFlag,
-		u: *UFlag,
-		f: *FFlag,
-		s: *SFlag,
-		i: *IFlag,
+		count: *CFlag,
+		duplicate: *DFlag,
+		uniq: *UFlag,
+		fields: *FFlag,
+		chars: *SFlag,
+		ignoreCase: *IFlag,
 	}
 
-	if (opt.c && opt.d && !opt.u || opt.c && !opt.d && opt.u || !opt.c && opt.d && opt.u) {
-		return opt, errors.New("Не правильно переданные аргументы командной строки")
+	err := checkFlags(opt)
+	if err != nil {
+		return opt, err
 	}
 
 	return opt, nil
@@ -222,5 +239,5 @@ func outputStrings(fout *os.File, strArr []string) error {
 func printHelp() {
 	fmt.Println("Введены некорректные флаги!\n" +
 				 "Использовать так: " +
-				 "uniq [-c | -d | -u] [-i] [-f num] [-s chars] [input_file [output_file]]")
+				 "uniq [-count | -duplicate | -uniq] [-ignoreCase] [-fields num] [-chars chars] [input_file [output_file]]")
 }

@@ -7,12 +7,24 @@ import (
 )
 
 
-func TestTable(t *testing.T) {
-	testDataArr := initData()
+func TestTablePositive(t *testing.T) {
+	testDataArr := initDataPositive()
 
-	for i, test := range testDataArr {
-		if !reflect.DeepEqual(test.output, uniq(test.input, test.opt)) {
-			t.Fatalf("Failed: " + strconv.Itoa(i) + " " + test.testName)
+	for ignoreCase, test := range testDataArr {
+		res, err := uniq(test.input, test.opt)
+		if err != nil || !reflect.DeepEqual(test.output, res) {
+			t.Fatalf("Failed: " + strconv.Itoa(ignoreCase) + " " + test.testName)
+		}
+	}
+}
+
+
+func TestTableNegative(t *testing.T) {
+	testDataArr := initDataNegative()
+	for ignoreCase, test := range testDataArr {
+		res, err := uniq(test.input, test.opt)
+		if err == nil || !reflect.DeepEqual([]string{}, res) {
+			t.Fatalf("Failed: " + strconv.Itoa(ignoreCase) + " " + test.testName)
 		}
 	}
 }
@@ -26,7 +38,7 @@ type testData struct {
 }
 
 
-func initData() []testData {
+func initDataPositive() []testData {
 	return []testData {
 		testData {
 			"Тест без параметров",
@@ -42,12 +54,12 @@ func initData() []testData {
 				"I love music of Kartik.",
 			},
 			options {
-				c: false,
-				d: false,
-				u: false,
-				f: 0,
-				s: 0,
-				i: false,
+				count: false,
+				duplicate: false,
+				uniq: false,
+				fields: 0,
+				chars: 0,
+				ignoreCase: false,
 			},
 			[]string {
 				"I love music.",
@@ -58,7 +70,7 @@ func initData() []testData {
 			},
 		},
 		testData {
-			"Тест с параметром -c",
+			"Тест с параметром -count",
 			[]string {
 				"I love music.",
 				"I love music.",
@@ -71,12 +83,12 @@ func initData() []testData {
 				"I love music of Kartik.",
 			},
 			options {
-				c: true,
-				d: false,
-				u: false,
-				f: 0,
-				s: 0,
-				i: false,
+				count: true,
+				duplicate: false,
+				uniq: false,
+				fields: 0,
+				chars: 0,
+				ignoreCase: false,
 			},
 			[]string {
 				"3 I love music.",
@@ -87,7 +99,7 @@ func initData() []testData {
 			},
 		},
 		testData {
-			"Тест с параметром -d",
+			"Тест с параметром -duplicate",
 			[]string {
 				"I love music.",
 				"I love music.",
@@ -100,12 +112,12 @@ func initData() []testData {
 				"I love music of Kartik.",
 			},
 			options {
-				c: false,
-				d: true,
-				u: false,
-				f: 0,
-				s: 0,
-				i: false,
+				count: false,
+				duplicate: true,
+				uniq: false,
+				fields: 0,
+				chars: 0,
+				ignoreCase: false,
 			},
 			[]string {
 				"I love music.",
@@ -114,7 +126,7 @@ func initData() []testData {
 			},
 		},
 		testData {
-			"Тест с параметром -u",
+			"Тест с параметром -uniq",
 			[]string {
 				"I love music.",
 				"I love music.",
@@ -127,12 +139,12 @@ func initData() []testData {
 				"I love music of Kartik.",
 			},
 			options {
-				c: false,
-				d: false,
-				u: true,
-				f: 0,
-				s: 0,
-				i: false,
+				count: false,
+				duplicate: false,
+				uniq: true,
+				fields: 0,
+				chars: 0,
+				ignoreCase: false,
 			},
 			[]string {
 				"",
@@ -140,7 +152,7 @@ func initData() []testData {
 			},
 		},
 		testData {
-			"Тест с параметром -f 1",
+			"Тест с параметром -fields 1",
 			[]string {
 				"We love music.",
 				"I love music.",
@@ -151,12 +163,12 @@ func initData() []testData {
 				"Thanks.",
 			},
 			options {
-				c: false,
-				d: false,
-				u: false,
-				f: 1,
-				s: 0,
-				i: false,
+				count: false,
+				duplicate: false,
+				uniq: false,
+				fields: 1,
+				chars: 0,
+				ignoreCase: false,
 			},
 			[]string {
 				"We love music.",
@@ -166,7 +178,7 @@ func initData() []testData {
 			},
 		},
 		testData {
-			"Тест с параметром -s 1",
+			"Тест с параметром -chars 1",
 			[]string {
 				"I love music.",
 				"A love music.",
@@ -177,12 +189,12 @@ func initData() []testData {
 				"Thanks.",
 			},
 			options {
-				c: false,
-				d: false,
-				u: false,
-				f: 0,
-				s: 1,
-				i: false,
+				count: false,
+				duplicate: false,
+				uniq: false,
+				fields: 0,
+				chars: 1,
+				ignoreCase: false,
 			},
 			[]string {
 				"I love music.",
@@ -193,7 +205,7 @@ func initData() []testData {
 			},
 		},
 		testData {
-			"Тест с параметром -i",
+			"Тест с параметром -ignoreCase",
 			[]string {
 				"I LOVE MUSIC.",
 				"I love music.",
@@ -206,12 +218,12 @@ func initData() []testData {
 				"I love MuSIC of Kartik.",
 			},
 			options {
-				c: false,
-				d: false,
-				u: false,
-				f: 0,
-				s: 0,
-				i: true,
+				count: false,
+				duplicate: false,
+				uniq: false,
+				fields: 0,
+				chars: 0,
+				ignoreCase: true,
 			},
 			[]string {
 				"I LOVE MUSIC.",
@@ -219,6 +231,213 @@ func initData() []testData {
 				"I love MuSIC of Kartik.",
 				"Thanks.",
 				"I love music of kartik.",
+			},
+		},
+	}
+}
+
+
+func initDataNegative() []testData {
+	return []testData {
+		testData {
+			"Тест без параметров",
+			[]string {
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			options {
+				count: true,
+				duplicate: true,
+				uniq: true,
+				fields: 0,
+				chars: 0,
+				ignoreCase: false,
+			},
+			[]string {
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+			},
+		},
+		testData {
+			"Тест без параметров",
+			[]string {
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			options {
+				count: false,
+				duplicate: true,
+				uniq: true,
+				fields: 0,
+				chars: 0,
+				ignoreCase: false,
+			},
+			[]string {
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+			},
+		},
+		testData {
+			"Тест с параметром -duplicate",
+			[]string {
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			options {
+				count: true,
+				duplicate: true,
+				uniq: false,
+				fields: 0,
+				chars: 0,
+				ignoreCase: false,
+			},
+			[]string {
+				"I love music.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+		},
+		testData {
+			"Тест без параметров",
+			[]string {
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			options {
+				count: true,
+				duplicate: false,
+				uniq: true,
+				fields: 0,
+				chars: 0,
+				ignoreCase: false,
+			},
+			[]string {
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+			},
+		},
+		testData {
+			"Тест без параметров",
+			[]string {
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			options {
+				count: false,
+				duplicate: true,
+				uniq: true,
+				fields: -3,
+				chars: 0,
+				ignoreCase: false,
+			},
+			[]string {
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+			},
+		},
+		testData {
+			"Тест без параметров",
+			[]string {
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			options {
+				count: false,
+				duplicate: true,
+				uniq: true,
+				fields: 0,
+				chars: -2,
+				ignoreCase: false,
+			},
+			[]string {
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+			},
+		},
+		testData {
+			"Тест без параметров",
+			[]string {
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			options {
+				count: false,
+				duplicate: true,
+				uniq: true,
+				fields: -12,
+				chars: -12,
+				ignoreCase: false,
+			},
+			[]string {
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
 			},
 		},
 	}
