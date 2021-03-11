@@ -239,5 +239,5 @@ func outputStrings(fout *os.File, strArr []string) error {
 func printHelp() {
 	fmt.Println("Введены некорректные флаги!\n" +
 				 "Использовать так: " +
-				 "uniq [-count | -duplicate | -uniq] [-ignoreCase] [-fields num] [-chars chars] [input_file [output_file]]")
+				 "uniq [-c | -d | -u] [-i] [-f num] [-c chars] [input_file [output_file]]")
 }
