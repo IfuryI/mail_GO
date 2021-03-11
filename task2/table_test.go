@@ -11,15 +11,7 @@ func TestTablePositive(t *testing.T) {
 	testDataArr := initDataPositive()
 
 	for i, test := range testDataArr {
-		parser := parser{test.input}
-
-		parsedExpression, err := parser.mainParse()
-	    if err != nil {
-	        fmt.Println(err)
-	        return
-	    }
-
-		res, err := eval(parsedExpression)
+		res, err := calculate(test.input)
 		if err != nil || test.output != res {
 			fmt.Println(err)
 			t.Fatalf("Failed: " + strconv.Itoa(i) + " " + test.input + " " + strconv.FormatFloat(test.output, 'f', 1, 64) + " " + strconv.FormatFloat(res, 'f', 1, 64))
@@ -32,13 +24,9 @@ func TestTableNegative(t *testing.T) {
 	testDataArr := initDataNegative	()
 
 	for i, test := range testDataArr {
-		parser := parser{test.input}
-
-		parsedExpression, err1 := parser.mainParse()
-
-		res, err2 := eval(parsedExpression)
-		if err2 == nil || err1 == nil || res == test.output {
-			t.Fatalf("Failed2: " + strconv.Itoa(i) + " " + test.input)
+		res, err := calculate(test.input)
+		if err == nil || res == test.output {
+			t.Fatalf("Failed: " + strconv.Itoa(i) + " " + test.input)
 		}
 	}
 }
@@ -160,6 +148,18 @@ func initDataNegative() []testData {
 		},
 		testData {
 			" (2 + 2 + (22 * 3) ",
+			43,
+		},
+		testData {
+			"3^2",
+			43,
+		},
+		testData {
+			"2+3)",
+			43,
+		},
+		testData {
+			"(2+(3*(4+5)",
 			43,
 		},
 	}

@@ -5,30 +5,47 @@ import (
     "flag"
     "unicode"
     "strconv"
+    "strings"
     "unsafe"
     "errors"
 )
 
 
-func printHelp() {
-    fmt.Println("Введены некорректные флаги!\n" +
-                 "Пример использования: " +
-                 "go run calc.go \"(1+2)*3\"")
+func main() {
+    expr, err := readExpressionFlags()
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    res, err := calculate(expr)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    fmt.Println(res)
 }
 
 
-func readExpressionFlags() string {
-    flag.Parse()
-    switch len(flag.Args()) {
-        case 1:
-            return flag.Args()[0]
-
-        default:
-            printHelp()
-            return ""
+func calculate(expr string) (float64, error) {
+    err := checkExpression(expr)
+    if err != nil {
+        return 0, err
     }
 
-    return ""
+    myParser := parser{expr}
+    parsedExpression, err := myParser.mainParse()
+    if err != nil {
+        return 0, err
+    }
+
+    res, err := eval(parsedExpression)
+    if err != nil {
+        return 0, err
+    }
+
+    return res, nil
 }
 
 
@@ -154,10 +171,6 @@ func (p *parser) parseBinaryExpression(minPriority int) (expression, error) {
 
 
 func (p *parser) mainParse() (expression, error) {
-    if ((*p).input == "") {
-        return expression{}, errors.New("Вы ввели пустую строку!")
-    }
-
     res, err := (*p).parseBinaryExpression(0)
     if err != nil {
         return expression{}, err
@@ -210,21 +223,55 @@ func eval(expr expression) (float64, error) {
 }
 
 
-func main() {
-    expression := readExpressionFlags()
+func readExpressionFlags() (string, error) {
+    flag.Parse()
+    switch len(flag.Args()) {
+        case 1:
+            return flag.Args()[0], nil
 
-    myParser := parser{expression}
-    parsedExpression, err := myParser.mainParse()
-    if err != nil {
-        fmt.Println(err)
-        return
+        default:
+            printHelp()
+            return "", errors.New("Переданы некорректные аргументы!")
     }
 
-    res, err := eval(parsedExpression)
-    if err != nil {
-        fmt.Println(err)
-        return
+    return "", errors.New("Переданы некорректные аргументы!")
+}
+
+
+func checkExpression(str string) error {
+    if (str == "") {
+        return errors.New("Вы ввели пустую строку!")
     }
 
-    fmt.Println(res)
+    leftCount := 0
+    rightCount := 0
+
+    tokens := " 0123456789+-*/()"
+
+    for _, symb := range str {
+        if !strings.ContainsRune(tokens, symb) {
+            return errors.New("Введен недопстимый символ!")
+        }
+
+        if symb == '(' {
+            leftCount++
+        }
+
+        if symb == ')' {
+            rightCount++
+        }
+    }
+
+    if leftCount != rightCount {
+        return errors.New("Несовпадающее количество открывающих и закрывающих скобок!")
+    }
+
+    return nil
+}
+
+
+func printHelp() {
+    fmt.Println("Введены некорректные флаги!\n" +
+                 "Пример использования: " +
+                 "go run calc.go \"(1+2)*3\"")
 }
